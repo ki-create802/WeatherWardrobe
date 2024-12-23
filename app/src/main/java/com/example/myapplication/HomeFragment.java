@@ -1,9 +1,12 @@
 package com.example.myapplication;
 
 import android.os.Bundle;
+import android.text.InputFilter;
+import android.text.Spanned;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+
 import androidx.fragment.app.Fragment;
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -12,9 +15,10 @@ import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
-import android.os.Bundle;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.TableLayout;
+
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.util.Log;
@@ -39,7 +43,6 @@ public class HomeFragment extends Fragment implements LocationListener {
     private TextView tvCityName;
     private TextView tvTemperature;
     private TextView tvDescription;
-    private TextView tvRecommendation;
 
     // 定义双精度类型的经纬度
     private Double longitude,latitude;
@@ -47,9 +50,6 @@ public class HomeFragment extends Fragment implements LocationListener {
     // 定义位置管理器
     private LocationManager locationManager;
 
-//    private TextView nowAddress;
-//    private TextView lat;
-//    private TextView lon;
     private ActivityResultLauncher<String[]> requestPermissionLauncher;
 
     @Override
@@ -59,11 +59,6 @@ public class HomeFragment extends Fragment implements LocationListener {
         tvCityName = view.findViewById(R.id.tvCityName);
         tvTemperature = view.findViewById(R.id.tvTemperature);
         tvDescription = view.findViewById(R.id.tvDescription);
-        tvRecommendation = view.findViewById(R.id.tvRecommendation);
-
-//        nowAddress = view.findViewById(R.id.tv_nowAddress);
-//        lat = view.findViewById(R.id.tv_latitude);
-//        lon = view.findViewById(R.id.tv_longitude);
 
         // 初始化权限请求
         requestPermissionLauncher = registerForActivityResult(
@@ -118,31 +113,6 @@ public class HomeFragment extends Fragment implements LocationListener {
         latitude = location.getLatitude();
         // 获取当前经度
         longitude = location.getLongitude();
-//        lat.setText("纬度：" + latitude);
-//        lon.setText("经度：" + longitude);
-
-//         定义位置解析
-//        Geocoder geocoder = new Geocoder(requireContext(), Locale.getDefault());
-//        try {//过时更新
-//            // 获取经纬度对于的位置
-//            // getFromLocation(纬度, 经度, 最多获取的位置数量)
-//            List<Address> addresses = geocoder.getFromLocation(latitude, longitude, 1);
-//            // 得到第一个经纬度位置解析信息
-//            Address address = addresses.get(0);
-//            // 只获取省市县的名称
-//            String province = address.getAdminArea(); // 获取省
-//            String city = address.getLocality(); // 获取市
-//            String district = address.getSubLocality(); // 获取区/县
-//
-//            // 拼接省市县信息
-//            String info = province + " " + city + " " + district;
-//            nowAddress.setText(info);
-//            adr = info;
-//            tvCityName.setText(info);
-//
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
 
         // 定义位置解析
         Geocoder geocoder = new Geocoder(requireContext(), Locale.getDefault());
@@ -212,12 +182,6 @@ public class HomeFragment extends Fragment implements LocationListener {
     }
 
 
-//    // 当前定位提供者状态  过时删除
-//    @Override
-//    public void onStatusChanged(String provider, int status, Bundle extras) {
-//        Log.e("onStatusChanged", provider);
-//    }
-
     // 任意定位提供者启动执行
     @Override
     public void onProviderEnabled(@NonNull String provider) {
@@ -230,19 +194,6 @@ public class HomeFragment extends Fragment implements LocationListener {
         Log.e("onProviderDisabled", provider);
     }
 
-//    @Override
-//    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-//        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-//        if (requestCode == 100) {
-//            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-//                // 权限被授予，获取位置
-//                getLocation();
-//            } else {
-//                // 权限被拒绝，提示用户
-//                Toast.makeText(requireContext(), "需要定位权限才能获取天气", Toast.LENGTH_SHORT).show();
-//            }
-//        }
-//    }
 
     private void fetchWeatherData(double latitude, double longitude) {//通过经纬度获取天气信息
 
@@ -314,6 +265,94 @@ public class HomeFragment extends Fragment implements LocationListener {
         tvCityName.setText(adr);
         tvTemperature.setText("当前气温: " + weather.main.temp + "°C");
         tvDescription.setText("天气: " + weather.weather.get(0).description);
-        tvRecommendation.setText("推荐穿搭: " + ClothingRecommendation.getClothingRecommendation(weather));
+//        tvRecommendation.setText("推荐穿搭: " + ClothingRecommendation.getClothingRecommendation(weather));
+
+        // 推荐穿搭信息
+        String recommendation = ClothingRecommendation.getClothingRecommendation(weather);
+
+        // 填充表格
+        TableLayout tableRecommendation = requireView().findViewById(R.id.tableRecommendation);
+        populateClothingRecommendation(requireContext(), tableRecommendation, recommendation);
     }
+
+    // 动态填充推荐穿搭信息到表格中
+    public void populateClothingRecommendation(Context context, TableLayout tableLayout, String recommendation) {
+        // 将推荐信息按 "+" 分割成不同类别
+        String[] items = recommendation.split("\\+");
+        String clothes = "", accessories = "", shoes = "";
+
+        // 简单分类：衣物、配饰和鞋具
+        if (items.length >= 1) clothes = items[0].trim();
+        if (items.length >= 2) accessories = items[1].trim();
+        if (items.length >= 3) shoes = items[2].trim();
+
+        // 找到静态添加的 TextView
+        TextView tvClothes = tableLayout.findViewById(R.id.tvClothes);
+        TextView tvAccessories = tableLayout.findViewById(R.id.tvAccessories);
+        TextView tvShoes = tableLayout.findViewById(R.id.tvShoes);
+
+        // 设置每行最多 5 个字符，并自动换行
+        int maxCharsPerLine = 5;
+        tvClothes.setFilters(new InputFilter[] { new LineBreakInputFilter(maxCharsPerLine) });
+        tvAccessories.setFilters(new InputFilter[] { new LineBreakInputFilter(maxCharsPerLine) });
+        tvShoes.setFilters(new InputFilter[] { new LineBreakInputFilter(maxCharsPerLine) });
+
+        // 动态填充内容
+        tvClothes.setText(clothes);
+        tvAccessories.setText(accessories);
+        tvShoes.setText(shoes);
+
+        // 设置 TextView 的最大行数为自动换行
+        tvClothes.setMaxLines(Integer.MAX_VALUE);
+        tvAccessories.setMaxLines(Integer.MAX_VALUE);
+        tvShoes.setMaxLines(Integer.MAX_VALUE);
+    }
+
+    // 自定义 InputFilter，用于限制每行的字符数并自动换行
+    public static class LineBreakInputFilter implements InputFilter {
+        private final int maxCharsPerLine;
+
+        public LineBreakInputFilter(int maxCharsPerLine) {
+            this.maxCharsPerLine = maxCharsPerLine;
+        }
+
+        @Override
+        public CharSequence filter(CharSequence source, int start, int end, Spanned dest, int dstart, int dend) {
+            StringBuilder builder = new StringBuilder();
+            int lineCharCount = 0;
+
+            for (int i = 0; i < dest.length(); i++) {
+                char c = dest.charAt(i);
+                if (c == '\n') {
+                    lineCharCount = 0;
+                } else {
+                    lineCharCount++;
+                }
+
+                if (lineCharCount > maxCharsPerLine) {
+                    builder.append('\n');
+                    lineCharCount = 0;
+                }
+                builder.append(c);
+            }
+
+            for (int i = start; i < end; i++) {
+                char c = source.charAt(i);
+                if (c == '\n') {
+                    lineCharCount = 0;
+                } else {
+                    lineCharCount++;
+                }
+
+                if (lineCharCount > maxCharsPerLine) {
+                    builder.append('\n');
+                    lineCharCount = 0;
+                }
+                builder.append(c);
+            }
+
+            return builder.toString();
+        }
+    }
+
 }
