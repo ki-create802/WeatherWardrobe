@@ -7,6 +7,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.fragment.app.Fragment;
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -28,6 +29,7 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.core.content.ContextCompat;
 import androidx.annotation.NonNull;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -273,8 +275,23 @@ public class HomeFragment extends Fragment implements LocationListener {
         // 填充表格
         TableLayout tableRecommendation = requireView().findViewById(R.id.tableRecommendation);
         populateClothingRecommendation(requireContext(), tableRecommendation, recommendation);
-    }
 
+        // 根据天气类型设置背景图片
+        String weatherDescription = weather.weather.get(0).description;
+//        String weatherDescription = "雷";//测试图片
+        int backgroundDrawableId = R.drawable.moren; // 默认背景
+
+        for (Map.Entry<String, Integer> entry : weatherBackgroundMap.entrySet()) {
+            if (weatherDescription.contains(entry.getKey())) {
+                backgroundDrawableId = entry.getValue();
+                break; // 找到匹配的关键词后，跳出循环
+            }
+        }
+        // 设置背景图片
+        ((ConstraintLayout) requireView().findViewById(R.id.rootLayout)).setBackgroundResource(backgroundDrawableId);
+        }
+
+    //**********************************************************************************************************
     // 动态填充推荐穿搭信息到表格中
     public void populateClothingRecommendation(Context context, TableLayout tableLayout, String recommendation) {
         // 将推荐信息按 "+" 分割成不同类别
@@ -355,4 +372,22 @@ public class HomeFragment extends Fragment implements LocationListener {
         }
     }
 
+    //************************************************************************************************************
+    //根据天气设置不同的背景
+    private static final Map<String, Integer> weatherBackgroundMap = new HashMap<String, Integer>() {{
+        put("晴", R.drawable.sunny); // 晴天
+//        put("少云", R.drawable.cloudy); // 少云
+        put("云", R.drawable.cloudy); // 多云
+        put("阴", R.drawable.yintain); // 阴天
+        put("雨", R.drawable.rainy); // 小雨
+//        put("中雨", R.drawable.rainy); // 中雨
+//        put("大雨", R.drawable.rainy); // 大雨
+        put("暴雨", R.drawable.rainy); // 暴雨
+        put("雪", R.drawable.snowy); // 小雪
+//        put("中雪", R.drawable.snowy); // 中雪
+//        put("大雪", R.drawable.snowy); // 大雪
+        put("雷", R.drawable.lei); // 雷阵雨
+        put("雾", R.drawable.wu); // 雾
+        put("薄雾", R.drawable.wu); // 薄雾
+    }};
 }
