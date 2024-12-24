@@ -14,9 +14,6 @@ public class WeatherResponse {
     @SerializedName("wind")
     public Wind wind;
 
-    @SerializedName("name")
-    public String name;
-
     public static class Main {
         @SerializedName("temp")
         public float temp;
@@ -28,9 +25,6 @@ public class WeatherResponse {
     public static class Weather {
         @SerializedName("description")
         public String description;
-
-        @SerializedName("icon")
-        public String icon;
     }
 
     public static class Wind {

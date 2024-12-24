@@ -1,6 +1,9 @@
 package com.example.myapplication;
 
 import android.os.Bundle;
+
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AlertDialog.Builder;
 import androidx.appcompat.app.AppCompatActivity;
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -12,6 +15,7 @@ import android.location.LocationManager;
 import android.text.InputFilter;
 import android.text.Spanned;
 import android.view.View;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.TableLayout;
@@ -104,6 +108,10 @@ public class MainActivity extends AppCompatActivity implements LocationListener{
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // 初始化 ProgressBar
+        ProgressBar progressBar = findViewById(R.id.progressBar);
+        progressBar.setVisibility(View.GONE); // 默认隐藏
+
         tvCityName = findViewById(R.id.tvCityName);
         tvTemperature = findViewById(R.id.tvTemperature);
         tvDescription = findViewById(R.id.tvDescription);
@@ -149,6 +157,10 @@ public class MainActivity extends AppCompatActivity implements LocationListener{
         // LocationManager.NETWORK_PROVIDER 网络定位
         // LocationManager.PASSIVE_PROVIDER 被动接受定位信息
         locationManager.requestLocationUpdates(LocationManager.PASSIVE_PROVIDER, 0, 0, this);
+
+        // 显示加载动画
+        ProgressBar progressBar = findViewById(R.id.progressBar);
+        progressBar.setVisibility(View.VISIBLE);
     }
 
     // 当位置改变时执行，除了移动设置距离为 0时
@@ -243,6 +255,11 @@ public class MainActivity extends AppCompatActivity implements LocationListener{
         call.enqueue(new Callback<WeatherResponse>() {
             @Override
             public void onResponse(Call<WeatherResponse> call, Response<WeatherResponse> response) {
+
+                // 隐藏加载动画
+                ProgressBar progressBar = findViewById(R.id.progressBar);
+                progressBar.setVisibility(View.GONE);
+
                 if (response.isSuccessful() && response.body() != null) {
                     WeatherResponse weather = response.body();
                     updateUI(weather);
@@ -254,12 +271,59 @@ public class MainActivity extends AppCompatActivity implements LocationListener{
 
             @Override
             public void onFailure(Call<WeatherResponse> call, Throwable t) {
-                Log.e("WeatherApp", "网络请求失败: " + t.getMessage());
-                Toast.makeText(MainActivity.this, "网络请求失败", Toast.LENGTH_SHORT).show();
+//                // 隐藏加载动画
+//                ProgressBar progressBar = findViewById(R.id.progressBar);
+//                progressBar.setVisibility(View.GONE);
+//
+//                // 弹出对话框，提示用户是否重新加载
+//                showRetryDialog();
+//
+//                Log.e("WeatherApp", "网络请求失败: " + t.getMessage());
+//                Toast.makeText(MainActivity.this, "网络请求失败", Toast.LENGTH_SHORT).show();
+                runOnUiThread(() -> {//切换回主线程
+                    // 隐藏加载动画
+                    ProgressBar progressBar = findViewById(R.id.progressBar);
+                    progressBar.setVisibility(View.GONE);
+
+                    // 弹出对话框，提示用户是否重新加载
+                    showRetryDialog();
+
+                    Log.e("WeatherApp", "网络请求失败: " + t.getMessage());
+                    Toast.makeText(MainActivity.this, "网络请求失败", Toast.LENGTH_SHORT).show();
+                });
             }
         });
     }
 
+    private void showRetryDialog() {
+        Log.d("WeatherApp", "弹出重试对话框");
+        // 创建 AlertDialog.Builder
+//        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        // 使用当前 Activity 的上下文
+        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+        builder.setTitle("网络请求失败");
+        builder.setMessage("无法获取天气数据，是否重新加载？");
+
+        // 添加“重新加载”按钮
+        builder.setPositiveButton("重新加载", (dialog, which) -> {
+            Log.d("WeatherApp", "用户点击了重新加载按钮");
+            // 重新发起网络请求
+            getLocation();
+        });
+
+        // 添加“取消”按钮
+        builder.setNegativeButton("取消", (dialog, which) -> {
+            Log.d("WeatherApp", "用户点击了取消按钮");
+            // 关闭对话框
+            dialog.dismiss();
+        });
+
+        // 显示对话框
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+
+    //更新控件
     private void updateUI(WeatherResponse weather) {
         Log.d("WeatherApp", "更新UI，天气数据: " + weather);
         tvCityName.setText(adr);
