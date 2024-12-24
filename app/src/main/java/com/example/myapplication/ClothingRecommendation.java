@@ -43,6 +43,14 @@ public class ClothingRecommendation {
             Warning +=  "今天有雨，请记得带好雨伞，必要时配备雨衣雨鞋，注意安全。";  // 雨天推荐雨具装备
         }
 
+        if (description.contains("雪")) {
+            Warning +=  "今天有雪，注意出行安全。";
+        }
+
+        if (description.contains("晴") ) {
+            Warning +=  "今天是个好天气!";
+        }
+
         // 如果风速大于10m/s，建议穿防风外套
         if (windSpeed > 10) {
             if (temp < 15) {
@@ -69,7 +77,7 @@ public class ClothingRecommendation {
         }
 
         if(Warning.isEmpty()){
-            Warning = "今天是个好天气!";
+            Warning = "祝您今天也有好心情!";
         }
         return Warning;
     }
