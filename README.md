@@ -6,10 +6,10 @@
 
 ## 二、代码结构
 
-### 1. androidTest
+### androidTest
 - 存放测试代码。
 
-### 2. main
+### main
 - **java**
   - `com.example.myapplication`：存放核心代码。
     - `ClothingRecommendation.java`：生成穿搭建议。
